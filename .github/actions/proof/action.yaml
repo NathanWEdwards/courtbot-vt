@@ -1,0 +1,6 @@
+name: 'Lean'
+description: 'lean --run ./docs/proof/.lean'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  

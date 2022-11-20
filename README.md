@@ -6,6 +6,8 @@ Project Lead: Stephen Chisa
 
 Tech Lead: Lucas Johnson
 
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/NathanWEdwards/courtbot-vt/tree/test.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/NathanWEdwards/courtbot-vt/tree/test) ![proof](https://github.com/NathanWEdwards/courtbot-vt/actions/workflows/proof.yaml/badge.svg?branch=test)
+
 ## Setup
 1. Clone the courtbot-vt repo:
 ```

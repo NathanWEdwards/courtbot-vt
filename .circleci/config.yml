@@ -1,0 +1,48 @@
+version: 2.1
+orbs:
+  codecov: codecov/codecov@3
+jobs:
+  build:
+    docker:
+      - image: cimg/python:3.9
+      - image: circleci/mongo:focal
+      - image: nwedwards/sftp:alpine3.15
+    working_directory: ~/project/courtbot-vt-manifest
+    steps:
+      - checkout
+      - run:
+          name: Install required packages
+          command: python -m pip install -r requirements.txt
+      - run:
+          name: Initialize the MongoDB database
+          command: |
+            python - \<< EOF
+            from pymongo import MongoClient
+
+            client = MongoClient("mongodb://localhost:27017")
+            db = client["courtbot"]
+            db.command("createUser",
+                        "user",
+                        pwd="password",
+                        roles=[
+                        {
+                            "role": "readWrite",
+                            "db": "courtbot"
+                        },
+                        {
+                            "role": "dbAdmin",
+                            "db": "courtbot"
+                        }
+                    ]
+            )
+            EOF
+      - run:
+          name: Run tests
+          command: python -m pytest --cov
+      - codecov/upload
+
+workflow:
+  version: 2.1
+  build-test:
+    jobs:
+      - build

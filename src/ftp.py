@@ -28,7 +28,8 @@ SFTP_USERNAME = os.getenv("SFTP_USERNAME", None)
 SFTP_PRIVATE_KEY = os.getenv("SFTP_PRIVATE_KEY", None)
 MONGODB_URI = os.getenv("MONGODB_URI")
 MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", "events")
-CLEAR_FTP_SERVER = os.getenv("CLEAR_FTP_SERVER", "false").lower() == 'true'
+CLEAR_FTP_SERVER = os.getenv("CLEAR_FTP_SERVER", "false").lower() == "true"
+
 
 def updateOperation(event):
     """
@@ -37,7 +38,8 @@ def updateOperation(event):
     :param event: event document to inserted to mongo
     :return: mongodb operation
     """
-    return UpdateOne({ "_id": event["_id"] }, { "$set": event }, upsert=True)
+    return UpdateOne({"_id": event["_id"]}, {"$set": event}, upsert=True)
+
 
 def read_file_to_panda(path):
     return pd.read_excel(path, header=None)
@@ -46,9 +48,12 @@ def read_file_to_panda(path):
 def get_uid(event):
     return f"{event['county']['code']}-{event['division']}-{event['docket_number']}-{event['litigant']['entity_id']}-{event['litigant']['role']['code']}"
 
+
 def csv_to_event(row):
     event = {
-        "date": datetime.strptime(f"{row[2]} {row[5]}", '%m/%d/%Y %H:%M').replace(tzinfo=dateutil.tz.gettz('America/New_York')),
+        "date": datetime.strptime(f"{row[2]} {row[5]}", "%m/%d/%Y %H:%M").replace(
+            tzinfo=dateutil.tz.gettz("America/New_York")
+        ),
         "county": {
             "code": row[1],
             "name": row[24],
@@ -93,8 +98,9 @@ def csv_to_event(row):
         },
         "calendar_id": row[30],
     }
-    event['_id'] = get_uid(event)
+    event["_id"] = get_uid(event)
     return event
+
 
 def ftp():
     if MONGODB_URI is None:
@@ -110,44 +116,46 @@ def ftp():
         # auto add host to host key list
         ssh.set_missing_host_key_policy(paramiko.client.AutoAddPolicy)
         # set private key from env variable
-        key = paramiko.RSAKey.from_private_key(io.StringIO(SFTP_PRIVATE_KEY.replace('\\n', '\n')))
+        key = paramiko.RSAKey.from_private_key(
+            io.StringIO(SFTP_PRIVATE_KEY.replace("\\n", "\n"))
+        )
         # connect with ssh and disabling some pubkey algorithms in order to use 'ssh-rsa' algorithm
-        ssh.connect(SFTP_HOST, port=SFTP_PORT, username=SFTP_USERNAME, pkey=key, disabled_algorithms=dict(pubkeys=['rsa-sha2-256', 'rsa-sha2-512']))
+        ssh.connect(SFTP_HOST, port=SFTP_PORT, username=SFTP_USERNAME, pkey=key)
         # open sftp
         with ssh.open_sftp() as sftp:
             # list the files
             files = sftp.listdir()
 
             # assume the last file listed is the latest file
-            if (len(files) == 0):
+            if len(files) == 0:
                 logging.info("No new files found on ftp server")
                 exit(0)
             latest_file = files[-1]
 
             # create tmp directory if it doesn't exist
-            if not os.path.exists('./tmp'):
-                os.makedirs('./tmp')
+            if not os.path.exists("./tmp"):
+                os.makedirs("./tmp")
             logging.info(f"downloading file from sftp server: {latest_file}")
             sftp.get(latest_file, f"./tmp/{latest_file}")
 
             # read in xlsx as panda
-            logging.info('reading excel file as panda')
+            logging.info("reading excel file as panda")
             df = read_file_to_panda(f"./tmp/{latest_file}")
 
             # panda to event object
-            logging.info('converting panda to json objects')
+            logging.info("converting panda to json objects")
             events = []
             for index, row in df.iterrows():
                 events.append(csv_to_event(row))
-            logging.info(f'read in {len(events)} events')
+            logging.info(f"read in {len(events)} events")
 
             # removing duplicate events
-            logging.info('removing duplicate events')
+            logging.info("removing duplicate events")
             events_to_write = unique_events(events)
-            logging.info(f'number of unique events: {len(events_to_write)}')
+            logging.info(f"number of unique events: {len(events_to_write)}")
 
             # write to mongo
-            logging.info('writing to mongo')
+            logging.info("writing to mongo")
             client = MongoClient(MONGODB_URI)
             db = client.courtbot
             mycol = db[MONGO_COLLECTION]
@@ -156,13 +164,14 @@ def ftp():
 
             # remove all files
             if CLEAR_FTP_SERVER:
-                logging.info('removing ftp files')
+                logging.info("removing ftp files")
                 for file in files:
                     logging.info(f"removing {file}")
                     sftp.remove(file)
     except Exception as e:
         logging.error(e)
         exit(1)
+
 
 def unique_events(events):
     # initialize a null list
@@ -171,10 +180,11 @@ def unique_events(events):
     # traverse for all elements
     for o in events:
         # check if exists in unique_list or not
-        if o['_id'] not in unique_ids:
-            unique_ids.append(o['_id'])
+        if o["_id"] not in unique_ids:
+            unique_ids.append(o["_id"])
             unique_events.append(o)
     return unique_events
+
 
 if __name__ == "__main__":
     ftp()

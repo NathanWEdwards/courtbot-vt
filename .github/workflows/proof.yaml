@@ -1,0 +1,9 @@
+on: [push]
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    name: Run proof
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/proof

@@ -110,7 +110,7 @@ def ftp():
         # set private key from env variable
         key = paramiko.RSAKey.from_private_key(io.StringIO(SFTP_PRIVATE_KEY.replace('\\n', '\n')))
         # connect with ssh and disabling some pubkey algorithms in order to use 'ssh-rsa' algorithm
-        ssh.connect(SFTP_HOST, port=SFTP_PORT, username=SFTP_USERNAME, pkey=key, disabled_algorithms=dict(pubkeys=['rsa-sha2-256', 'rsa-sha2-512']))
+        ssh.connect(SFTP_HOST, port=SFTP_PORT, username=SFTP_USERNAME, pkey=key)
         # open sftp
         with ssh.open_sftp() as sftp:
             # list the files
